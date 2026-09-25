@@ -39,8 +39,10 @@ def detect_page(image: np.ndarray) -> Tuple[BBox, np.ndarray, np.ndarray]:
     w = min(img_w - x, w + 2 * pad_w)
     h = min(img_h - y, h + 2 * pad_h)
     
-    # If the detected box is very small, it might have failed, fall back to full image
-    if w < img_w * 0.5 or h < img_h * 0.5:
+    # If the detected box is too small, the segmentation likely failed — fall back
+    # to the full image.  Threshold at 75% rather than 50% so partial crops
+    # (e.g. Otsu only finding the bottom portion of a manuscript leaf) are rejected.
+    if w < img_w * 0.75 or h < img_h * 0.75:
         x, y, w, h = 0, 0, img_w, img_h
         
     page_bbox = BBox(x, y, w, h)

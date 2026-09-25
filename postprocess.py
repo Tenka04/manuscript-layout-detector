@@ -14,7 +14,43 @@ class Postprocessor:
         """
         if not text_boxes:
             return []
-            
+
+        # 0. Split oversized detections at zone boundaries.
+        #    The fallback dilate+contour detector can produce a single contour
+        #    spanning the entire page.  Splitting it ensures that header/footer
+        #    text get their own lines and can be classified independently.
+        #    Only split when OTHER (non-oversized) detections exist in the
+        #    header/footer zones, providing evidence of distinct content there.
+        header_y = int(config.HEADER_ZONE_RATIO * self.page_h)
+        footer_y = int(config.FOOTER_ZONE_RATIO * self.page_h)
+        has_hf_evidence = False
+        for tb in text_boxes:
+            b = tb.bbox
+            if b.h > self.page_h * 0.5:
+                continue  # skip oversized boxes themselves
+            cy = b.y + b.h / 2
+            if (cy < header_y or cy > footer_y) and b.w > config.MIN_REGION_WIDTH_RATIO * self.page_w:
+                has_hf_evidence = True
+                break
+
+        split_boxes = []
+        for tb in text_boxes:
+            b = tb.bbox
+            if has_hf_evidence and b.h > self.page_h * 0.5:
+                # Box is oversized and H/F content exists — split at zone boundaries
+                cuts = sorted(set([b.y, header_y, footer_y, b.y + b.h]))
+                for i in range(len(cuts) - 1):
+                    y_top = max(b.y, cuts[i])
+                    y_bot = min(b.y + b.h, cuts[i + 1])
+                    if y_bot > y_top:
+                        split_boxes.append(TextBox(
+                            BBox(b.x, y_top, b.w, y_bot - y_top),
+                            tb.confidence
+                        ))
+            else:
+                split_boxes.append(tb)
+        text_boxes = split_boxes
+
         # 1. Line-level merging
         # Sort by y-center
         boxes = sorted(text_boxes, key=lambda tb: tb.bbox.y + tb.bbox.h / 2)
@@ -39,11 +75,24 @@ class Postprocessor:
         # 2. Block-level merging: fixed-point agglomerative clustering
         #    Each pass freezes group extents, finds valid merges via union-find,
         #    applies them, and repeats until no pass produces new merges.
+        #    Hard zone-barrier: never merge groups whose y-centers fall in
+        #    different zones (header / body / footer).
         blocks = []
         if lines:
             median_line_h = np.median([b.h for b in lines])
             gap_threshold = config.BLOCK_MERGE_GAP_FACTOR * median_line_h
             overlap_threshold = config.BLOCK_MERGE_X_OVERLAP_THRESHOLD
+            header_boundary = config.HEADER_ZONE_RATIO * self.page_h
+            footer_boundary = config.FOOTER_ZONE_RATIO * self.page_h
+
+            def _zone(y_top, y_bot):
+                """Classify a group's zone by its y-center."""
+                cy = (y_top + y_bot) / 2
+                if cy < header_boundary:
+                    return 0  # header
+                elif cy > footer_boundary:
+                    return 2  # footer
+                return 1      # body
 
             # Each group is a list of line indices into `lines`
             groups = [[i] for i in range(len(lines))]
@@ -85,11 +134,11 @@ class Postprocessor:
                 any_merged = False
                 for idx_i in range(len(order)):
                     gi = order[idx_i]
-                    _, y_bot_i, x0_i, x1_i, w_i = group_extents[gi]
+                    y_top_i, y_bot_i, x0_i, x1_i, w_i = group_extents[gi]
 
                     for idx_j in range(idx_i + 1, len(order)):
                         gj = order[idx_j]
-                        y_top_j, _, x0_j, x1_j, w_j = group_extents[gj]
+                        y_top_j, y_bot_j, x0_j, x1_j, w_j = group_extents[gj]
 
                         # Vertical gap (groups sorted by y_top, so gap
                         # increases monotonically → safe to break early)
@@ -99,6 +148,16 @@ class Postprocessor:
 
                         # Already in the same component this pass
                         if _find(gi) == _find(gj):
+                            continue
+
+                        # Zone barrier: block cross-zone merges when at least
+                        # one group is wide enough to be a real region.  Only
+                        # allow cross-zone merges between two narrow fragments
+                        # (noise that would otherwise be stranded).
+                        min_width_for_zone = config.MIN_REGION_WIDTH_RATIO * self.page_w
+                        if (_zone(y_top_i, y_bot_i) != _zone(y_top_j, y_bot_j)
+                                and (w_i >= min_width_for_zone
+                                     or w_j >= min_width_for_zone)):
                             continue
 
                         # Horizontal overlap on representative x-ranges

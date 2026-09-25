@@ -1,0 +1,19 @@
+{
+  "image": "sample_2.png",
+  "image_size": {
+    "width": 2048,
+    "height": 834
+  },
+  "regions": [
+    {
+      "label": "main_text",
+      "bbox": {
+        "x": 103,
+        "y": 66,
+        "w": 1714,
+        "h": 646
+      },
+      "confidence": 0.7
+    }
+  ]
+}

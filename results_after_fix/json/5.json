@@ -1,0 +1,23 @@
+{
+  "image": "5.png",
+  "image_size": {
+    "width": 840,
+    "height": 365
+  },
+  "regions": [
+    {
+      "label": "main_text",
+      "bbox": {
+        "x": 4,
+        "y": 16,
+        "w": 828,
+        "h": 333,
+        "x1": 4,
+        "y1": 16,
+        "x2": 832,
+        "y2": 349
+      },
+      "confidence": 0.7
+    }
+  ]
+}

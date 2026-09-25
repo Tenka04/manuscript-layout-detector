@@ -1,0 +1,37 @@
+{
+  "image": "2.png",
+  "image_size": {
+    "width": 998,
+    "height": 844
+  },
+  "regions": [
+    {
+      "label": "header",
+      "bbox": {
+        "x": 0,
+        "y": 0,
+        "w": 998,
+        "h": 71,
+        "x1": 0,
+        "y1": 0,
+        "x2": 998,
+        "y2": 71
+      },
+      "confidence": 0.8
+    },
+    {
+      "label": "main_text",
+      "bbox": {
+        "x": 0,
+        "y": 96,
+        "w": 998,
+        "h": 748,
+        "x1": 0,
+        "y1": 96,
+        "x2": 998,
+        "y2": 844
+      },
+      "confidence": 0.7
+    }
+  ]
+}

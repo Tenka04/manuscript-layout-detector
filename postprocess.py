@@ -36,32 +36,97 @@ class Postprocessor:
             if current_line:
                 lines.append(self._bbox_union([b.bbox for b in current_line]))
                 
-        # 2. Block-level merging
-        # Sort lines by y_top
-        lines = sorted(lines, key=lambda b: b.y)
-        
+        # 2. Block-level merging: fixed-point agglomerative clustering
+        #    Each pass freezes group extents, finds valid merges via union-find,
+        #    applies them, and repeats until no pass produces new merges.
         blocks = []
         if lines:
             median_line_h = np.median([b.h for b in lines])
-            current_block = [lines[0]]
-            
-            for line in lines[1:]:
-                prev_line = current_block[-1]
-                gap = line.y - (prev_line.y + prev_line.h)
-                
-                # Check horizontal overlap
-                min_x = max(line.x, prev_line.x)
-                max_x = min(line.x + line.w, prev_line.x + prev_line.w)
-                overlap_w = max(0, max_x - min_x)
-                overlap_ratio = overlap_w / min(line.w, prev_line.w) if min(line.w, prev_line.w) > 0 else 0
-                
-                if gap < config.BLOCK_MERGE_GAP_FACTOR * median_line_h and overlap_ratio > config.BLOCK_MERGE_X_OVERLAP_THRESHOLD:
-                    current_block.append(line)
-                else:
-                    blocks.append(self._bbox_union(current_block))
-                    current_block = [line]
-            if current_block:
-                blocks.append(self._bbox_union(current_block))
+            gap_threshold = config.BLOCK_MERGE_GAP_FACTOR * median_line_h
+            overlap_threshold = config.BLOCK_MERGE_X_OVERLAP_THRESHOLD
+
+            # Each group is a list of line indices into `lines`
+            groups = [[i] for i in range(len(lines))]
+
+            while True:
+                # --- Freeze group extents for this pass ---
+                group_extents = []
+                for group in groups:
+                    members = [lines[i] for i in group]
+                    y_top = min(b.y for b in members)
+                    y_bot = max(b.y + b.h for b in members)
+                    # Representative x-range: IQR-based for 4+ lines,
+                    # median for smaller groups, to prevent one wide
+                    # outlier from inflating the merge zone.
+                    x_starts = [b.x for b in members]
+                    x_ends = [b.x + b.w for b in members]
+                    n = len(members)
+                    if n >= 4:
+                        repr_x0 = float(np.percentile(x_starts, 25))
+                        repr_x1 = float(np.percentile(x_ends, 75))
+                    else:
+                        repr_x0 = float(np.median(x_starts))
+                        repr_x1 = float(np.median(x_ends))
+                    repr_w = max(repr_x1 - repr_x0, 1)
+                    group_extents.append((y_top, y_bot, repr_x0, repr_x1, repr_w))
+
+                # Sort group indices by y_top for early-break optimisation
+                order = sorted(range(len(groups)), key=lambda k: group_extents[k][0])
+
+                # Union-find scoped to this pass
+                parent = list(range(len(groups)))
+
+                def _find(x):
+                    while parent[x] != x:
+                        parent[x] = parent[parent[x]]
+                        x = parent[x]
+                    return x
+
+                any_merged = False
+                for idx_i in range(len(order)):
+                    gi = order[idx_i]
+                    _, y_bot_i, x0_i, x1_i, w_i = group_extents[gi]
+
+                    for idx_j in range(idx_i + 1, len(order)):
+                        gj = order[idx_j]
+                        y_top_j, _, x0_j, x1_j, w_j = group_extents[gj]
+
+                        # Vertical gap (groups sorted by y_top, so gap
+                        # increases monotonically → safe to break early)
+                        gap = y_top_j - y_bot_i
+                        if gap >= gap_threshold:
+                            break
+
+                        # Already in the same component this pass
+                        if _find(gi) == _find(gj):
+                            continue
+
+                        # Horizontal overlap on representative x-ranges
+                        ov_left = max(x0_i, x0_j)
+                        ov_right = min(x1_i, x1_j)
+                        ov_w = max(0, ov_right - ov_left)
+                        ov_ratio = ov_w / min(w_i, w_j) if min(w_i, w_j) > 0 else 0
+
+                        if ov_ratio > overlap_threshold:
+                            ra, rb = _find(gi), _find(gj)
+                            parent[rb] = ra
+                            any_merged = True
+
+                if not any_merged:
+                    break
+
+                # Rebuild groups from union-find results
+                new_groups = {}
+                for gi in range(len(groups)):
+                    root = _find(gi)
+                    if root not in new_groups:
+                        new_groups[root] = []
+                    new_groups[root].extend(groups[gi])
+                groups = list(new_groups.values())
+
+            # Final blocks from converged groups
+            for group in groups:
+                blocks.append(self._bbox_union([lines[i] for i in group]))
                 
         return blocks
 

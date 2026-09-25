@@ -1,0 +1,37 @@
+{
+  "image": "3.png",
+  "image_size": {
+    "width": 905,
+    "height": 458
+  },
+  "regions": [
+    {
+      "label": "main_text",
+      "bbox": {
+        "x": 0,
+        "y": 197,
+        "w": 905,
+        "h": 247,
+        "x1": 0,
+        "y1": 197,
+        "x2": 905,
+        "y2": 444
+      },
+      "confidence": 0.7
+    },
+    {
+      "label": "main_text",
+      "bbox": {
+        "x": 787,
+        "y": 447,
+        "w": 86,
+        "h": 5,
+        "x1": 787,
+        "y1": 447,
+        "x2": 873,
+        "y2": 452
+      },
+      "confidence": 0.7
+    }
+  ]
+}

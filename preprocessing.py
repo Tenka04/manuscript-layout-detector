@@ -8,6 +8,9 @@ def detect_page(image: np.ndarray) -> Tuple[BBox, np.ndarray, np.ndarray]:
     """
     Detects the page boundary and returns the BBox, page mask, and cropped image.
     """
+    if image is None or image.size == 0 or image.shape[0] == 0 or image.shape[1] == 0:
+        return BBox(0, 0, 0, 0), np.zeros((0, 0), dtype=np.uint8), image
+
     if len(image.shape) == 3:
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     else:
@@ -52,6 +55,9 @@ def deskew(gray: np.ndarray) -> Tuple[np.ndarray, float]:
     """
     Calculates skew angle and rotates image.
     """
+    if gray is None or gray.size == 0 or gray.shape[0] < 5 or gray.shape[1] < 5:
+        return gray, 0.0
+
     # Inverse binary for projection profile
     blur = cv2.GaussianBlur(gray, (9, 9), 0)
     _, thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
@@ -87,6 +93,9 @@ def preprocess_image(image: np.ndarray) -> Tuple[np.ndarray, np.ndarray, float]:
     Processes the cropped page image.
     Returns enhanced_gray, binary, skew_angle
     """
+    if image is None or image.size == 0 or image.shape[0] == 0 or image.shape[1] == 0:
+        return np.zeros((0, 0), dtype=np.uint8), np.zeros((0, 0), dtype=np.uint8), 0.0
+
     if len(image.shape) == 3:
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     else:

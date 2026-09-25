@@ -11,6 +11,9 @@ class FillerDetector:
         Detect decorative elements and holes.
         binary: white text/elements on black background.
         """
+        if binary is None or binary.size == 0 or page_width <= 0 or page_height <= 0:
+            return []
+
         contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         
         non_text_regions = []

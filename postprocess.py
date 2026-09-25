@@ -71,22 +71,29 @@ class Postprocessor:
         """
         refined = []
         for r in regions:
-            # Clamping
-            right = min(self.page_w, r.bbox.x + r.bbox.w)
-            bottom = min(self.page_h, r.bbox.y + r.bbox.h)
-            x = max(0, r.bbox.x)
-            y = max(0, r.bbox.y)
-            w = max(0, right - x)
-            h = max(0, bottom - y)
+            # Clamping coordinates strictly within [0, page_w] and [0, page_h]
+            x1 = max(0, min(self.page_w, r.bbox.x))
+            y1 = max(0, min(self.page_h, r.bbox.y))
+            x2 = max(0, min(self.page_w, r.bbox.x + r.bbox.w))
+            y2 = max(0, min(self.page_h, r.bbox.y + r.bbox.h))
+            
+            # Discard regions that are degenerate or completely outside boundaries
+            if x2 <= x1 or y2 <= y1:
+                continue
+                
+            w = x2 - x1
+            h = y2 - y1
             
             # Reclassify based on size
             label = r.label
-            if label == "header" and (h / self.page_h) > config.MAX_HEADER_HEIGHT_RATIO:
-                label = "main_text"
-            if label == "footer" and (h / self.page_h) > config.MAX_HEADER_HEIGHT_RATIO:
-                label = "main_text"
+            if self.page_h > 0:
+                if label == "header" and (h / self.page_h) > config.MAX_HEADER_HEIGHT_RATIO:
+                    label = "main_text"
+                if label == "footer" and (h / self.page_h) > config.MAX_HEADER_HEIGHT_RATIO:
+                    label = "main_text"
                 
-            refined.append(Region(BBox(x, y, w, h), label, r.confidence, r.sub_type))
+            conf = max(0.0, min(1.0, float(r.confidence)))
+            refined.append(Region(BBox(x1, y1, w, h), label, conf, r.sub_type))
             
         # Conflict resolution: remove fully subsumed regions
         final_refined = []
@@ -97,7 +104,8 @@ class Postprocessor:
                     if r.bbox.x >= other.bbox.x and r.bbox.y >= other.bbox.y and \
                        r.bbox.x + r.bbox.w <= other.bbox.x + other.bbox.w and \
                        r.bbox.y + r.bbox.h <= other.bbox.y + other.bbox.h:
-                        if other.bbox.w * other.bbox.h > r.bbox.w * r.bbox.h:
+                        if (other.bbox.w * other.bbox.h > r.bbox.w * r.bbox.h) or \
+                           (other.bbox.w * other.bbox.h == r.bbox.w * r.bbox.h and j < i):
                             subsumed = True
                             break
             if not subsumed:

@@ -23,10 +23,10 @@ class Classifier:
         center_x = bbox.x + bbox.w / 2
         center_y = bbox.y + bbox.h / 2
         
-        norm_x = center_x / self.page_w
-        norm_y = center_y / self.page_h
-        norm_w = bbox.w / self.page_w
-        norm_h = bbox.h / self.page_h
+        norm_x = center_x / self.page_w if self.page_w > 0 else 0.5
+        norm_y = center_y / self.page_h if self.page_h > 0 else 0.5
+        norm_w = bbox.w / self.page_w if self.page_w > 0 else 0.0
+        norm_h = bbox.h / self.page_h if self.page_h > 0 else 0.0
         
         # Text density
         region_binary = binary_image[max(0, bbox.y):min(self.page_h, bbox.y+bbox.h), 

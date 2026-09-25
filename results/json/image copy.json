@@ -1,0 +1,23 @@
+{
+  "image": "image copy.png",
+  "image_size": {
+    "width": 2408,
+    "height": 1026
+  },
+  "regions": [
+    {
+      "label": "main_text",
+      "bbox": {
+        "x": 0,
+        "y": 0,
+        "w": 2408,
+        "h": 1026,
+        "x1": 0,
+        "y1": 0,
+        "x2": 2408,
+        "y2": 1026
+      },
+      "confidence": 0.7
+    }
+  ]
+}

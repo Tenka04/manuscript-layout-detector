@@ -46,36 +46,6 @@
         "y2": 455
       },
       "confidence": 0.8
-    },
-    {
-      "label": "filler",
-      "bbox": {
-        "x": 8,
-        "y": 370,
-        "w": 332,
-        "h": 34,
-        "x1": 8,
-        "y1": 370,
-        "x2": 340,
-        "y2": 404
-      },
-      "confidence": 0.75,
-      "sub_type": "decorative"
-    },
-    {
-      "label": "filler",
-      "bbox": {
-        "x": 765,
-        "y": 369,
-        "w": 123,
-        "h": 78,
-        "x1": 765,
-        "y1": 369,
-        "x2": 888,
-        "y2": 447
-      },
-      "confidence": 0.75,
-      "sub_type": "decorative"
     }
   ]
 }

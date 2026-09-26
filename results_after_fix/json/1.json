@@ -61,6 +61,34 @@
       },
       "confidence": 0.75,
       "sub_type": "decorative"
+    },
+    {
+      "label": "header",
+      "bbox": {
+        "x": 0,
+        "y": 5,
+        "w": 1173,
+        "h": 20,
+        "x1": 0,
+        "y1": 5,
+        "x2": 1173,
+        "y2": 25
+      },
+      "confidence": 0.8
+    },
+    {
+      "label": "footer",
+      "bbox": {
+        "x": 0,
+        "y": 481,
+        "w": 1157,
+        "h": 18,
+        "x1": 0,
+        "y1": 481,
+        "x2": 1157,
+        "y2": 499
+      },
+      "confidence": 0.8
     }
   ]
 }

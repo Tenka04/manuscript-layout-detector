@@ -49,12 +49,13 @@ class FillerDetector:
                         
             # Check for decorative
             if not is_hole:
-                if solidity < config.SOLIDITY_THRESHOLD:
+                area_ratio = area / page_area
+                # Only flag as decorative if large enough to be a meaningful
+                # decoration (not just an ink blob or margin artifact).
+                # Low-solidity contours must also be reasonably large.
+                if solidity < config.SOLIDITY_THRESHOLD and area_ratio > 0.005:
                     is_decorative = True
-                elif area > config.MIN_DECORATIVE_AREA_RATIO * page_area:
-                    is_decorative = True
-                elif abs(w - h) < max(w, h) * 0.1 and area > config.FALLBACK_MIN_AREA * 5: # Roughly square and large
-                    # Could be an ornament
+                elif area_ratio > config.MIN_DECORATIVE_AREA_RATIO:
                     is_decorative = True
                     
             if is_hole:

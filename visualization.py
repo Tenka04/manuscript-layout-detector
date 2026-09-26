@@ -1,8 +1,8 @@
 import cv2
 import numpy as np
 import json
-import os
-from typing import List, Dict
+
+from typing import List
 from models import Region, DetectionResult
 import config
 

@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List, Optional, Tuple, Any
+from typing import List, Tuple
 
 @dataclass
 class BBox:
@@ -20,11 +20,6 @@ class Region:
     confidence: float   # 0.0-1.0
     sub_type: str = ""  # For filler: "english"|"decorative"|"pencil"
 
-@dataclass
-class PageInfo:
-    page_bbox: Optional[BBox]  # None if no boundary detected
-    page_mask: Any = None
-    skew_angle: float = 0.0
 
 @dataclass
 class DetectionResult:

@@ -207,6 +207,12 @@ class Postprocessor:
                 
             w = x2 - x1
             h = y2 - y1
+
+            # Discard narrow margin-noise fragments.  Ink bleed and edge
+            # artefacts along manuscript margins produce very thin regions
+            # (typically < 3 % of page width) that are not meaningful.
+            if self.page_w > 0 and w < config.MIN_REFINED_WIDTH_RATIO * self.page_w:
+                continue
             
             # Reclassify based on size
             label = r.label

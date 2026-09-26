@@ -66,12 +66,12 @@ class TestQAScenarios(unittest.TestCase):
 
     def test_01_single_image_input(self):
         # Scenario 1: Single image input
-        sample_img = "data/test_images/sample_1.png"
+        sample_img = "data/test_images/1.png"
         out_dir = os.path.join(self.test_dir, "out_single")
         os.makedirs(out_dir, exist_ok=True)
         
         process_image(sample_img, out_dir, self.detector, self.visualizer)
-        json_path = os.path.join(out_dir, "json", "sample_1.json")
+        json_path = os.path.join(out_dir, "json", "1.json")
         verify_json_regions(self, json_path)
 
     def test_02_folder_input(self):
@@ -83,14 +83,14 @@ class TestQAScenarios(unittest.TestCase):
         res = subprocess.run(cmd, capture_output=True, text=True)
         self.assertEqual(res.returncode, 0, f"CLI folder run failed: {res.stderr}")
 
-        for stem in ["sample_1", "sample_2"]:
+        for stem in ["1", "2"]:
             json_path = os.path.join(out_dir, "json", f"{stem}.json")
             verify_json_regions(self, json_path)
 
     def test_03_jpg_input(self):
         # Scenario 3: JPG
         jpg_path = os.path.join(self.test_dir, "test_manuscript.jpg")
-        src = cv2.imread("data/test_images/sample_1.png")
+        src = cv2.imread("data/test_images/1.png")
         cv2.imwrite(jpg_path, src)
 
         out_dir = os.path.join(self.test_dir, "out_jpg")
@@ -103,13 +103,13 @@ class TestQAScenarios(unittest.TestCase):
 
     def test_04_png_input(self):
         # Scenario 4: PNG
-        png_path = "data/test_images/sample_2.png"
+        png_path = "data/test_images/2.png"
         out_dir = os.path.join(self.test_dir, "out_png")
         cmd = [self.python_exe, "inference.py", "--input", png_path, "--output", out_dir]
         res = subprocess.run(cmd, capture_output=True, text=True)
         self.assertEqual(res.returncode, 0, f"CLI PNG run failed: {res.stderr}")
 
-        json_path = os.path.join(out_dir, "json", "sample_2.json")
+        json_path = os.path.join(out_dir, "json", "2.json")
         verify_json_regions(self, json_path)
 
     def test_05_invalid_image(self):

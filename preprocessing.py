@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
-from typing import Tuple, Optional
-from models import BBox, PageInfo
+from typing import Tuple
+from models import BBox
 import config
 
 def detect_page(image: np.ndarray) -> Tuple[BBox, np.ndarray, np.ndarray]:

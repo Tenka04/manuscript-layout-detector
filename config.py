@@ -44,6 +44,10 @@ HOLE_AREA_MAX_RATIO = 0.03
 # Filler detection
 FILLER_TEXT_DENSITY_THRESHOLD = 0.02
 
+# Minimum region width (fraction of page width) to keep in refinement.
+# Regions narrower than this are treated as margin noise and discarded.
+MIN_REFINED_WIDTH_RATIO = 0.04
+
 # Output
 BBOX_COLORS = {
     "header": (255, 107, 107),
